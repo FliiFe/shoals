@@ -17,21 +17,17 @@ export default class Fish {
         // Met à jour la position avec la nouvelle accélération
         this.update(vmax, wrap)
         // Remet le poisson dans le cadre s'il a dépassé (tore)
-        if(wrap) this.borders()
+        if(wrap) this.pos.mod(this.ctx.width, this.ctx.height)
+
         // Dessine le poisson
         this.render(bl, r, vmax, dark)
     }
     inflacc(fish, vmax, fmax, sepr, alir, cohr, fsep, fali, fcoh, wrap) {
-        let sep = this.separation(fish, vmax, fmax, sepr, wrap)  // Séparation
-        let ali = this.alignement(fish, vmax, fmax, alir, wrap)  // Alignement
-        let coh = this.cohesion(fish, vmax, fmax, cohr, wrap)    // Cohésion
-        sep.scale(fsep)
-        ali.scale(fali)
-        coh.scale(fcoh)
+        // Calcule la force résultante des trois règles
+        let rulesf = this.rules(fish, vmax, fmax, sepr, fsep, alir, fali, cohr, fcoh, wrap)
+        rulesf.scale(fcoh)
         // Applique les forces (PFD)
-        this.acc.add(sep)
-        this.acc.add(ali)
-        this.acc.add(coh)
+        this.acc.add(rulesf)
     }
     update(vmax, wrap) {
         if(!wrap) {
@@ -61,83 +57,59 @@ export default class Fish {
         attraction.limit(fmax)
         return attraction
     }
-    borders() {
-        if (this.pos.x < 0) this.pos.x = this.ctx.width
-        if (this.pos.y < 0) this.pos.y = this.ctx.height
-        if (this.pos.x > this.ctx.width) this.pos.x = 0
-        if (this.pos.y > this.ctx.height) this.pos.y = 0
-    }
-    separation(fish, vmax, fmax, sepr, wrap) {
-        // Force de repulsion
-        let repf = new Vector(0, 0)
-        let count = 0
+    rules(fish, vmax, fmax, sepr, fsep, alir, fali, cohr, fcoh, wrap) {
+        let sepf = new Vector(0, 0)
+        let sepCount = 0
+        let cohf = new Vector(0, 0)
+        let cohCount = 0
+        let alif = new Vector(0, 0)
+        let aliCount = 0
         fish.forEach(f => {
             let fpos = wrap ? Vector.closerMod(this.pos, f.pos, this.ctx.width, this.ctx.height) : f.pos
             let d = Vector.dist(this.pos, fpos)
-            // Distance nulle si f est le poisson actuel
+            if ((d > 0) && (d < cohr)) {
+                cohf.add(fpos)
+                cohCount++
+            }
+            if ((d > 0) && (d < alir)) {
+                alif.add(f.v)
+                aliCount++
+            }
             if ((d > 0) && (d < sepr)) {
                 // Une force pour s'éloigner du poissons
                 let diff = Vector.sub(this.pos, fpos)
                 diff.normalise()
                 diff.div(d)
-                repf.add(diff)
-                count++
+                sepf.add(diff)
+                sepCount++
             }
         })
-        // On moyenne
-        if (count > 0) {
-            repf.div(count)
+        if (sepCount > 0) {
+            sepf.div(sepCount)
         }
-
-        // Si le vecteur est non nul
-        if (repf.magSq() > 0) {
-            // objectif - vitesse
-            repf.normalise()
-            repf.scale(vmax)
-            repf.sub(this.v)
-            repf.limit(fmax)
+        if (sepf.magSq() > 0) {
+            sepf.normalise()
+            sepf.scale(vmax)
+            sepf.sub(this.v)
+            sepf.limit(fmax)
         }
-        return repf
-    }
-    alignement(fish, vmax, fmax, alir, wrap) {
-        let sum = new Vector(0, 0)
-        let count = 0
-        fish.forEach(f => {
-            let fpos = wrap ? Vector.closerMod(this.pos, f.pos, this.ctx.width, this.ctx.height) : f.pos
-            let d = Vector.dist(this.pos, fpos)
-            if ((d > 0) && (d < alir)) {
-                sum.add(f.v)
-                count++
-            }
-        })
-        if (count > 0) {
-            sum.div(count)
-            sum.normalise()
-            sum.scale(vmax)
-            let alf = Vector.sub(sum, this.v)
+        sepf.scale(fsep)
+        let cohesionRes = new Vector(0, 0)
+        if (cohCount > 0) {
+            cohf.div(cohCount)
+            cohesionRes.add(this.seek(cohf, vmax, fmax).scale(fcoh))
+        }
+        let alignmentRes = new Vector(0, 0)
+        if (aliCount > 0) {
+            alif.div(aliCount)
+            alif.normalise()
+            alif.scale(vmax)
+            let alf = Vector.sub(alif, this.v)
             alf.limit(fmax)
-            return alf
-        } else {
-            return new Vector(0, 0)
+            alf.scale(fali)
+            alignmentRes.add(alf)
         }
-    }
-    cohesion(fish, vmax, fmax, cohr, wrap) {
-        let sum = new Vector(0, 0)
-        let count = 0
-        fish.forEach(f => {
-            let fpos = wrap ? Vector.closerMod(this.pos, f.pos, this.ctx.width, this.ctx.height) : f.pos
-            let d = Vector.dist(this.pos, fpos)
-            if ((d > 0) && (d < cohr)) {
-                sum.add(fpos)
-                count++
-            }
-        })
-        if (count > 0) {
-            sum.div(count)
-            return this.seek(sum, vmax, fmax)
-        } else {
-            return new Vector(0, 0)
-        }
+        return Vector.add(cohesionRes, alignmentRes).add(sepf)
     }
     render(bl, r, vmax, dark) {
         let theta = this.v.heading() - Math.PI / 2

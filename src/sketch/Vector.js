@@ -35,6 +35,17 @@ export default class Vector {
         return this
     }
     /**
+     * Additionne deux vecteurs sans les modifier
+     *
+     * @static
+     * @param {Vector} v1 a
+     * @param {Vector} v2 b
+     * @returns {Vector} a+b
+     */
+    static add(v1, v2) {
+        return v1.copy().add(v2)
+    }
+    /**
      * Soustrait deux vecteurs sans les modifier
      *
      * @static
