@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "dat.gui": "^0.7.6",
-    "p5": "^0.5.9"
+    "p5": "^0.5.9",
+    "stats.js": "^0.17.0"
   },
   "devDependencies": {
     "webpack": "^2.5.1",

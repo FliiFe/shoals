@@ -4,38 +4,31 @@ import { random } from './Utils'
 export default class Population {
     constructor(ctx) {
         this.fish = []
-        this.vmax = 3
-        this.fmax = 0.05
-        this.r = 3
-        this.bl = 15
-        this.sepr = 25
-        this.alir = 50
-        this.cohr = 50
-        this.fsep = 1.5
-        this.fali = this.fcoh = 1
-        this.fsepb = this.falib = this.fcohb = true
-        this.wrap = false
-        this.n = 100
         this.ctx = ctx
-        this.dark = true
+        this.setDefaults()
+    }
+    setDefaults() {
+        this.options = {
+            vmax: 3,
+            fmax: 0.05,
+            r: 3,
+            bl: 15,
+            sepr: 25,
+            alir: 50,
+            cohr: 50,
+            fsep: 1.5,
+            fali: 1,
+            fcoh: 1,
+            wrap: false,
+            n: 100,
+            ctx: this.ctx,
+            dark: false,
+            showRadius: false,
+            vangle: 5 * Math.PI / 6
+        }
     }
     run() {
-        this.fish.forEach(f =>
-            f.run(
-                this.fish,
-                this.vmax,
-                this.fmax,
-                this.bl,
-                this.r,
-                this.sepr,
-                this.alir,
-                this.cohr,
-                this.fsepb && this.fsep || 0,
-                this.falib && this.fali || 0,
-                this.fcohb && this.fcoh || 0,
-                this.wrap,
-                this.dark
-            ))
+        this.fish.forEach(f => f.run(this.fish))
     }
     /**
      * Ajoute un poisson
@@ -46,11 +39,11 @@ export default class Population {
         this.fish.push(fish)
     }
     populate() {
-        for (let i = 0; i < this.n; i++) {
+        for (let i = 1; i <= this.options.n; i++) {
             let b = new Fish(
-                this.ctx.width / 2 + random(-50, 50),
-                this.ctx.height / 2 + random(-50, 50),
-                this.ctx)
+                this.options.ctx.width / 2 + random(-50, 50),
+                this.options.ctx.height / 2 + random(-50, 50),
+                this.options, i)
             this.addFish(b)
         }
     }

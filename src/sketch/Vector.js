@@ -57,6 +57,17 @@ export default class Vector {
         return v1.copy().sub(v2)
     }
     /**
+     * Distance au carré entre v1 et v2
+     *
+     * @static
+     * @param {Vector} v1 a
+     * @param {Vector} v2 b
+     * @returns {Vector} || a - b ||^2
+     */
+    static distsq(v1, v2) {
+        return v1.copy().sub(v2).magSq()
+    }
+    /**
      * Calcule la distance entre v1 et v2
      *
      * @static
